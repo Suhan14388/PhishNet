@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PhishNet Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body data-live="off">
+<canvas id="bgfx" aria-hidden="true"></canvas>
+<div id="toasts" aria-live="assertive"></div>
+
+<div class="app">
+  <aside class="side">
+    <div class="logo"><span data-i="logo"></span> PhishNet</div>
+    <nav class="nav">
+      <button class="on" data-view="overview"><span data-i="overview"></span> Overview</button>
+      <button data-view="live"><span data-i="live"></span> Live protection <span class="live-dot"></span></button>
+      <button data-view="scanner"><span data-i="scanner"></span> Scanner</button>
+      <button data-view="firewall"><span data-i="firewall"></span> Firewall</button>
+      <button data-view="network"><span data-i="network"></span> Network</button>
+      <button data-view="history"><span data-i="history"></span> History</button>
+      <button data-view="extension"><span data-i="extension"></span> Browser protection</button>
+    </nav>
+    <div class="side-foot">
+      <b><span class="dot"></span>{{ user.username }}</b>
+      {{ user.email }}<br><a href="/logout">Log out</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <h1 id="title">Overview</h1>
+      <div class="topr">
+        <span class="chip"><i></i>LIVE <span id="chip-t">OFF</span></span>
+        <span class="clock" id="clock">--:--:--</span>
+        <div class="who">Alerts go to {{ user.email }}</div>
+      </div>
+    </div>
+    <div class="ticker" aria-hidden="true"><div class="tk" id="ticker"></div></div>
+
+    <!-- OVERVIEW -->
+    <section class="view on" id="v-overview">
+      <div class="panel status" id="status" data-mode="ok">
+        <div class="shield">
+          <svg viewBox="0 0 200 200" aria-hidden="true">
+            <circle class="rg r1" cx="100" cy="100" r="94"/>
+            <circle class="rg r2" cx="100" cy="100" r="80"/>
+            <circle class="rg r3" cx="100" cy="100" r="66"/>
+            <path class="sh" d="M100 50l40 15v32c0 26-17 42-40 49-23-7-40-23-40-49V65z"/>
+            <path class="ck" d="M83 100l13 13 23-26"/>
+          </svg>
+        </div>
+        <div>
+          <div class="eyebrow">SYSTEM STATUS</div>
+          <div class="big" id="sysstate">PROTECTED</div>
+          <div class="sub" id="syssub">Loading your protection status...</div>
+          <div class="pills">
+            <span class="pill" id="pl-live">Live protection<b>OFF</b></span>
+            <span class="pill" id="pl-auto">Auto-scan<b>OFF</b></span>
+            <span class="pill" id="pl-mail">Email alerts<b>OFF</b></span>
+            <span class="pill on" id="pl-blk">Blocked<b>0</b></span>
+          </div>
+        </div>
+        <div class="stctl">
+          <label class="sw-l big"><span class="sw"><input type="checkbox" class="js-live"><i></i></span> Live protection</label>
+          <label class="sw-l"><span class="sw"><input type="checkbox" class="js-auto"><i></i></span> Auto-scan network</label>
+        </div>
+      </div>
+
+      <div class="row hero">
+        <div class="panel">
+          <h3>Network radar <span id="netcidr"></span></h3>
+          <div class="radar-wrap"><canvas id="radar" aria-label="Radar of devices found on your network"></canvas></div>
+          <div class="ctl">
+            <button class="btn js-scan">Scan network now</button>
+            <label class="sw-l"><span class="sw"><input type="checkbox" class="js-auto"><i></i></span> Auto-scan and auto-block</label>
+            <span class="mut" id="scanstate"></span>
+          </div>
+        </div>
+        <div class="col">
+          <div class="stats">
+            <div class="tile"><span class="n" id="st-total">0</span><span>Scans run</span></div>
+            <div class="tile bad"><span class="n" id="st-high">0</span><span>High-risk found</span></div>
+            <div class="tile warn"><span class="n" id="st-blocked">0</span><span>Items blocked</span></div>
+            <div class="tile ok"><span class="n" id="st-hosts">0</span><span>Devices on network</span></div>
+          </div>
+          <div class="panel"><h3>Risk of recent scans</h3><canvas id="trend"></canvas></div>
+          <div class="panel">
+            <h3>Recent alerts <button class="btn ghost sm" id="testalert" style="margin-left:auto">Send test alert</button></h3>
+            <div id="alerts"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVE PROTECTION -->
+    <section class="view" id="v-live">
+      <div class="row two">
+        <div class="panel">
+          <h3>Clipboard shield</h3>
+          <div class="livecore">
+            <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+            <button class="corebtn" id="corebtn" aria-label="Turn live protection on or off">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>
+              <span id="coretxt">OFF</span>
+            </button>
+          </div>
+          <p class="lead" id="livetxt" style="text-align:center">Turn on live protection to check everything you copy.</p>
+          <div class="ctl" style="justify-content:center;margin-top:6px">
+            <label class="sw-l big"><span class="sw"><input type="checkbox" class="js-live"><i></i></span> Scan everything I copy</label>
+          </div>
+          <div class="stats three">
+            <div class="tile"><span class="n" id="lv-checked">0</span><span>Copies checked</span></div>
+            <div class="tile warn"><span class="n" id="lv-susp">0</span><span>Suspicious</span></div>
+            <div class="tile bad"><span class="n" id="lv-threat">0</span><span>Threats</span></div>
+          </div>
+          <div class="warnbox" id="livewarn" hidden>Clipboard access is not installed on the server. Open a terminal and run <b>pip install pyperclip</b>, then restart PhishNet.</div>
+          <p class="hint mut">Works in any app: browser, WhatsApp, email, Word. Copy a link or message and PhishNet checks it in under a second. Text with no link and no scam wording is ignored and never stored.</p>
+        </div>
+        <div class="panel">
+          <h3>Live clipboard feed <span id="livecount"></span></h3>
+          <div class="term" id="livefeed"></div>
+          <p class="hint mut">Try it: copy <b>http://secure-login-paypal.xyz/verify</b> and watch this feed.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCANNER -->
+    <section class="view" id="v-scanner">
+      <div class="row two">
+        <div class="panel">
+          <h3>Check a link or message</h3>
+          <div class="seg"><button class="on" data-kind="url">Link</button><button data-kind="message">Message</button></div>
+          <div class="scanbox" id="scanbox">
+            <textarea id="text" class="field" rows="7" placeholder="Paste a link to check, for example http://secure-login-paypal.xyz/verify"></textarea>
+          </div>
+          <button class="btn" id="scanbtn">Scan now</button>
+        </div>
+        <div class="panel">
+          <h3>Result</h3>
+          <div id="result" class="empty">Scan a link or message to see its risk score here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FIREWALL -->
+    <section class="view" id="v-firewall">
+      <div class="row two">
+        <div class="panel">
+          <h3>Block a port</h3>
+          <div class="inline"><input class="field" id="port" inputmode="numeric" placeholder="Port number, e.g. 23"><button class="btn danger" id="bport">Block port</button></div>
+          <div class="presets" id="presets"></div>
+          <p class="hint mut sm">Rules are applied with the Windows or Linux firewall. Run PhishNet as Administrator. Ports 5000 and 1433 are protected.</p>
+        </div>
+        <div class="panel">
+          <h3>Block a domain</h3>
+          <div class="inline"><input class="field" id="dom" placeholder="Domain, e.g. evil-site.xyz"><button class="btn danger" id="bdom">Block domain</button></div>
+          <p class="hint mut sm">Blocked domains are shown as High risk and blocked by the browser extension. High-risk domains are added automatically.</p>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:20px">
+        <h3>Block list</h3>
+        <div class="tw"><table class="tbl"><thead><tr><th>Type</th><th>Value</th><th></th></tr></thead><tbody id="tb-blocked"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- NETWORK -->
+    <section class="view" id="v-network">
+      <div class="panel">
+        <h3>Devices and open ports <span id="netcidr2"></span></h3>
+        <div class="ctl" style="margin:0 0 14px">
+          <button class="btn js-scan">Scan network now</button>
+          <label class="sw-l"><span class="sw"><input type="checkbox" class="js-auto"><i></i></span> Auto-scan every 5 minutes</label>
+        </div>
+        <div class="netstat" id="netstat" data-s="none">No scan yet. Press Scan network now.</div>
+        <div class="netbar" id="netbar"><i></i></div>
+        <div class="tw"><table class="tbl"><thead><tr><th>Device</th><th>Open ports (red = risky, click to block)</th></tr></thead><tbody id="tb-hosts"></tbody></table></div>
+        <p class="hint mut sm">Uses Nmap to find every device on the network you are connected to and lists its open ports. Risky ports (red) are blocked automatically and the port number is emailed to you. Only scan networks you own or have permission to scan.</p>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="view" id="v-history">
+      <div class="panel">
+        <div class="phead">
+          <h3>Scan history</h3><span class="mut" id="histcount"></span>
+          <button class="btn danger" id="clearbtn">Clear history</button>
+        </div>
+        <div class="tw"><table class="tbl"><thead><tr><th>Target</th><th>Source</th><th>Risk</th><th>Time</th></tr></thead><tbody id="tb-history"></tbody></table></div>
+        <p class="hint mut sm">Showing the latest 50 scans. Clearing history also makes the dashboard load faster.</p>
+      </div>
+    </section>
+
+    <!-- EXTENSION -->
+    <section class="view" id="v-extension">
+      <div class="panel">
+        <h3>Scan every page you open</h3>
+        <p>The browser extension checks the address, links and text of each page automatically. High-risk pages are covered with a warning.</p>
+        <h4>Your API key</h4>
+        <div class="keybox" id="key"></div>
+        <button class="btn ghost sm" id="copykey">Copy key</button>
+        <h4>Set up</h4>
+        <ol class="steps">
+          <li>Open <b>chrome://extensions</b> (or edge://extensions) and turn on Developer mode.</li>
+          <li>Choose <b>Load unpacked</b> and select the <b>extension</b> folder inside PhishNet.</li>
+          <li>Click the PhishNet icon in the toolbar, paste your key, and press Save.</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- CLEAR HISTORY DIALOG -->
+<div class="modal-back" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
+  <div class="modal panel">
+    <h3 id="mt">Clear history</h3>
+    <p class="mut" style="margin-bottom:16px">Choose what to remove. Your block list, account and settings are not touched.</p>
+    <label class="chk"><input type="checkbox" id="c-scans" checked><i></i><span>Scan history <small id="n-scans"></small></span></label>
+    <label class="chk"><input type="checkbox" id="c-alerts" checked><i></i><span>Alerts <small id="n-alerts"></small></span></label>
+    <label class="chk"><input type="checkbox" id="c-net" checked><i></i><span>Old network scan data <small id="n-net">The latest scan is kept</small></span></label>
+    <div class="prog" id="c-prog"><i></i></div>
+    <div class="mrow"><button class="btn ghost" id="c-cancel">Cancel</button><button class="btn danger" id="c-go">Clear now</button></div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

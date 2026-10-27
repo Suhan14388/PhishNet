@@ -1,0 +1,6 @@
+flask
+pyodbc
+python-nmap
+werkzeug
+pyperclip
+psutil

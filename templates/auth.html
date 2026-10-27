@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PhishNet - {{ 'Create account' if mode=='register' else 'Log in' }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<main class="auth">
+  <section class="art" aria-hidden="true">
+    <canvas id="net"></canvas>
+    <div class="copy">
+      <div class="brand glitch" id="brand" data-text="PhishNet">PhishNet</div>
+      <p class="tag-line">Stop the scam before the click.</p>
+      <ul class="points">
+        <li>Checks every link and message you open</li>
+        <li>Live clipboard shield: scans every link you copy</li>
+        <li>Blocks risky ports and domains for you</li>
+        <li>Emails you the moment something looks dangerous</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="formside">
+    <form class="card" method="post" id="form">
+      <h2>{{ 'Create your account' if mode=='register' else 'Welcome back' }}</h2>
+      <p class="sub">{{ 'Set up PhishNet in under a minute.' if mode=='register' else 'Log in to open your dashboard.' }}</p>
+      {% if err %}<div class="err" role="alert">{{ err }}</div>{% endif %}
+
+      <label for="username">Username</label>
+      <input class="field" id="username" name="username" autocomplete="username" required autofocus>
+
+      {% if mode=='register' %}
+      <label for="email">Email</label>
+      <input class="field" id="email" name="email" type="email" autocomplete="email" required>
+      <div class="hint">High-risk alerts are sent to this address.</div>
+      {% endif %}
+
+      <label for="password">Password</label>
+      <div class="pw">
+        <input class="field" id="password" name="password" type="password" autocomplete="{{ 'new-password' if mode=='register' else 'current-password' }}" required>
+        <button type="button" id="toggle">Show</button>
+      </div>
+
+      <button class="btn" id="submit">{{ 'Create account' if mode=='register' else 'Log in' }}</button>
+      <p class="alt">
+        {% if mode=='register' %}Already registered? <a href="/login">Log in</a>
+        {% else %}New here? <a href="/register">Create an account</a>{% endif %}
+      </p>
+    </form>
+  </section>
+</main>
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+</body>
+</html>
